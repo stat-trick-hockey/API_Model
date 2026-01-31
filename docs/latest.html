@@ -83,6 +83,37 @@
     .sparkTitle { font-weight:800; }
     .sparkMeta { font-size:12px; color:var(--muted); }
     .spark { display:block; width:100%; height:auto; }
+    /* ---------- Mobile table overflow fix ---------- */
+    
+    /* Wrap the table in a scroll container */
+    .tableScroll{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Keep table from shrinking weirdly */
+    .tableScroll table{
+      min-width: 980px;      /* adjust if you add/remove columns */
+      width:100%;
+    }
+    
+    /* Mobile tightening */
+    @media (max-width: 720px){
+      th, td{
+        padding:10px 10px;
+      }
+      .wrap{
+        padding:0 10px;
+      }
+      .title{
+        font-size:20px;
+      }
+      th{
+        font-size:11px;
+      }
+    }
+
 
     table { width:100%; border-collapse:collapse; }
     th,td { padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
@@ -454,20 +485,21 @@
     
 
     <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Matchup</th>
-            <th class="center">P(Away)</th>
-            <th class="center">P(Home)</th>
-            <th class="center">Away ML</th>
-            <th class="center">Home ML</th>
-            <th class="center">Lean</th>
-            <th>Predicted Team Metrics</th>
-          </tr>
-        </thead>
-        <tbody>
+        <div class="tableScroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Matchup</th>
+                <th class="center">P(Away)</th>
+                <th class="center">P(Home)</th>
+                <th class="center">Away ML</th>
+                <th class="center">Home ML</th>
+                <th class="center">Lean</th>
+                <th>Predicted Team Metrics</th>
+              </tr>
+            </thead>
+            <tbody>
             <tr>
               <td class="muted">8:30 PM</td>
               <td><b>CBJ</b> @ <b>CHI</b><div class="sub muted">Game 2025020858</div></td>
@@ -507,8 +539,8 @@
         </td>
             </tr>
             </tbody>
-      </table>
-    </div>
-  </div>
+          </table>
+        </div>
+      </div>
 </body>
 </html>
