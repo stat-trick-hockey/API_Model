@@ -148,38 +148,19 @@
     </div>
 
     
-    <div class="sparkCard">
-      <div class="sparkHdr">
-        <div class="sparkTitle">Prediction Rate</div>
-        <div class="sparkMeta">
-          <span class="mono">rolling 50g: <b>60.0%</b></span>
-          <span class="muted" style="margin:0 10px;">•</span>
-          <span class="mono muted">all-time: 62.1%</span>
-          <span class="muted" style="margin:0 10px;">•</span>
-          <span class="mono muted">scored: 2191g</span>
+        <div class="sparkCard">
+          <div class="sparkHdr">
+            <div class="sparkTitle">Prediction Rate</div>
+            <div class="sparkMeta muted">No scored games</div>
+          </div>
+          
+        <svg viewBox="0 0 560 56" width="560" height="56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="560" height="56" rx="10" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.10)"/>
+          <text x="6" y="28" fill="rgba(255,255,255,.55)" font-size="12" font-family="system-ui">No scored games yet</text>
+        </svg>
+        
         </div>
-      </div>
-      
-    <svg class="spark" viewBox="0 0 560 56" width="560" height="56" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="rgba(90,170,255,.20)"></stop>
-          <stop offset="100%" stop-color="rgba(90,170,255,0)"></stop>
-        </linearGradient>
-      </defs>
-
-      <rect x="0" y="0" width="560" height="56" rx="12"
-            fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.10)"/>
-
-      <line x1="6" y1="37.43" x2="554" y2="37.43"
-            stroke="rgba(255,255,255,.10)" stroke-dasharray="4 4"/>
-
-      <polyline fill="none" stroke="rgba(90,170,255,.95)" stroke-width="2" points="6.00,6.00 9.94,6.00 13.88,12.29 17.83,12.29 21.77,18.57 25.71,18.57 29.65,24.86 33.60,24.86 37.54,24.86 41.48,24.86 45.42,18.57 49.37,18.57 53.31,18.57 57.25,24.86 61.19,18.57 65.14,18.57 69.08,12.29 73.02,12.29 76.96,6.00 80.91,6.00 84.85,6.00 88.79,12.29 92.73,6.00 96.68,6.00 100.62,12.29 104.56,18.57 108.50,24.86 112.45,31.14 116.39,31.14 120.33,37.43 124.27,43.71 128.22,37.43 132.16,37.43 136.10,31.14 140.04,24.86 143.99,31.14 147.93,31.14 151.87,31.14 155.81,31.14 159.76,37.43 163.70,31.14 167.64,31.14 171.58,31.14 175.53,37.43 179.47,43.71 183.41,50.00 187.35,50.00 191.29,43.71 195.24,43.71 199.18,43.71 203.12,43.71 207.06,37.43 211.01,31.14 214.95,31.14 218.89,24.86 222.83,24.86 226.78,24.86 230.72,24.86 234.66,24.86 238.60,18.57 242.55,18.57 246.49,24.86 250.43,24.86 254.37,24.86 258.32,24.86 262.26,24.86 266.20,24.86 270.14,31.14 274.09,37.43 278.03,37.43 281.97,31.14 285.91,31.14 289.86,37.43 293.80,37.43 297.74,37.43 301.68,31.14 305.63,24.86 309.57,18.57 313.51,24.86 317.45,24.86 321.40,24.86 325.34,24.86 329.28,24.86 333.22,31.14 337.17,31.14 341.11,31.14 345.05,31.14 348.99,31.14 352.94,31.14 356.88,24.86 360.82,31.14 364.76,31.14 368.71,24.86 372.65,24.86 376.59,24.86 380.53,24.86 384.47,24.86 388.42,24.86 392.36,24.86 396.30,24.86 400.24,24.86 404.19,24.86 408.13,24.86 412.07,24.86 416.01,24.86 419.96,31.14 423.90,24.86 427.84,31.14 431.78,31.14 435.73,31.14 439.67,37.43 443.61,31.14 447.55,37.43 451.50,37.43 455.44,37.43 459.38,37.43 463.32,43.71 467.27,43.71 471.21,37.43 475.15,31.14 479.09,37.43 483.04,31.14 486.98,31.14 490.92,31.14 494.86,24.86 498.81,31.14 502.75,31.14 506.69,37.43 510.63,31.14 514.58,24.86 518.52,18.57 522.46,24.86 526.40,24.86 530.35,18.57 534.29,18.57 538.23,12.29 542.17,12.29 546.12,12.29 550.06,6.00 554.00,6.00" />
-      <circle cx="554.00" cy="6.00" r="3.5" fill="rgba(90,170,255,1)" />
-    </svg>
-    
-    </div>
-    
+        
     
     <div class="summaryCard">
       <div class="summaryTitle">Model Summary</div>
@@ -188,298 +169,194 @@
         
         <div class="summaryStat highlight">
           <div class="k">All-time</div>
-          <div class="v">62.1% <span class="trend trendUp">▲</span> <span class="muted">(2191 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">54.8%</div>
-          <div class="bn">553g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">54.6%</div>
-          <div class="bn">555g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">63.4%</div>
-          <div class="bn">560g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">76.5%</div>
-          <div class="bn">523g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
         
         <div class="summaryStat">
           <div class="k">Last 90 days</div>
-          <div class="v">58.1% <span class="trend trendUp">▲</span> <span class="muted">(663 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">53.7%</div>
-          <div class="bn">136g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">51.2%</div>
-          <div class="bn">213g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">56.3%</div>
-          <div class="bn">183g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">76.3%</div>
-          <div class="bn">131g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
         
         <div class="summaryStat">
           <div class="k">Last 60 days</div>
-          <div class="v">57.6% <span class="trend trendUp">▲</span> <span class="muted">(446 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">58.3%</div>
-          <div class="bn">96g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">51.4%</div>
-          <div class="bn">148g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">53.2%</div>
-          <div class="bn">126g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">76.3%</div>
-          <div class="bn">76g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
         
         <div class="summaryStat">
           <div class="k">Last 30 days</div>
-          <div class="v">56.9% <span class="trend trendUp">▲</span> <span class="muted">(225 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">59.2%</div>
-          <div class="bn">49g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">55.6%</div>
-          <div class="bn">81g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">47.5%</div>
-          <div class="bn">59g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">72.2%</div>
-          <div class="bn">36g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
         
         <div class="summaryStat">
           <div class="k">Last 7 days</div>
-          <div class="v">61.7% <span class="trend trendUp">▲</span> <span class="muted">(47 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">81.8%</div>
-          <div class="bn">11g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">52.6%</div>
-          <div class="bn">19g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">50.0%</div>
-          <div class="bn">12g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">80.0%</div>
-          <div class="bn">5g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
         
         <div class="summaryStat highlight">
           <div class="k">Yesterday</div>
-          <div class="v">80.0% <span class="trend trendUp">▲</span> <span class="muted">(15 games)</span></div>
+          <div class="v">— <span class="trend trendFlat">•</span> <span class="muted">(0 games)</span></div>
           <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="bucketChip">
-          <div class="bk">50-53</div>
-          <div class="bv">100.0%</div>
-          <div class="bn">5g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">53-58</div>
-          <div class="bv">71.4%</div>
-          <div class="bn">7g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">58-65</div>
-          <div class="bv">0.0%</div>
-          <div class="bn">1g</div>
-        </div>
-        
-        <div class="bucketChip">
-          <div class="bk">65-100</div>
-          <div class="bv">100.0%</div>
-          <div class="bn">2g</div>
-        </div>
-        </div>
+            <div class="bucketChip">
+              <div class="bk">50-53</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">53-58</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">58-65</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            
+            <div class="bucketChip">
+              <div class="bk">65-100</div>
+              <div class="bv">—</div>
+              <div class="bn">0g</div>
+            </div>
+            </div>
         </div>
         
       </div>
 
-      <div class="summaryTitle" style="margin-top:14px;">Yesterday Recap <span class="muted">(2026-01-29)</span></div>
+      <div class="summaryTitle" style="margin-top:14px;">Yesterday Recap <span class="muted">(—)</span></div>
       <div class="recapBox">
-        
-                <div class="recapRow">
-                  <div class="recapLeft">ANA @ VAN</div>
-                  <div class="recapMid">Pick: <b>VAN</b> <span class="muted">(55.5%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: VAN</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">DAL @ VGK</div>
-                  <div class="recapMid">Pick: <b>DAL</b> <span class="muted">(55.5%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: DAL</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">TOR @ SEA</div>
-                  <div class="recapMid">Pick: <b>SEA</b> <span class="muted">(50.4%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: SEA</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">PHI @ BOS</div>
-                  <div class="recapMid">Pick: <b>PHI</b> <span class="muted">(57.2%)</span></div>
-                  <div class="recapRight">❌ <span class="muted">Actual: BOS</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">LAK @ BUF</div>
-                  <div class="recapMid">Pick: <b>BUF</b> <span class="muted">(51.3%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: BUF</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">COL @ MTL</div>
-                  <div class="recapMid">Pick: <b>COL</b> <span class="muted">(59.9%)</span></div>
-                  <div class="recapRight">❌ <span class="muted">Actual: MTL</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">WPG @ TBL</div>
-                  <div class="recapMid">Pick: <b>TBL</b> <span class="muted">(65.9%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: TBL</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">NSH @ NJD</div>
-                  <div class="recapMid">Pick: <b>NJD</b> <span class="muted">(55.0%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: NJD</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">NYI @ NYR</div>
-                  <div class="recapMid">Pick: <b>NYR</b> <span class="muted">(53.1%)</span></div>
-                  <div class="recapRight">❌ <span class="muted">Actual: NYI</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">CHI @ PIT</div>
-                  <div class="recapMid">Pick: <b>PIT</b> <span class="muted">(51.5%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: PIT</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">UTA @ CAR</div>
-                  <div class="recapMid">Pick: <b>CAR</b> <span class="muted">(57.0%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: CAR</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">WSH @ DET</div>
-                  <div class="recapMid">Pick: <b>WSH</b> <span class="muted">(52.0%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: WSH</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">FLA @ STL</div>
-                  <div class="recapMid">Pick: <b>STL</b> <span class="muted">(50.6%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: STL</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">CGY @ MIN</div>
-                  <div class="recapMid">Pick: <b>MIN</b> <span class="muted">(69.7%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: MIN</span></div>
-                </div>
-                
-
-                <div class="recapRow">
-                  <div class="recapLeft">SJS @ EDM</div>
-                  <div class="recapMid">Pick: <b>EDM</b> <span class="muted">(55.0%)</span></div>
-                  <div class="recapRight">✅ <span class="muted">Actual: EDM</span></div>
-                </div>
-                
+        <div class="muted" style="padding:8px 0;">No scored games found.</div>
       </div>
     </div>
     
@@ -503,16 +380,16 @@
             <tr>
               <td class="muted">8:30 PM</td>
               <td><b>CBJ</b> @ <b>CHI</b><div class="sub muted">Game 2025020858</div></td>
-              <td class="center">49.5%</td>
-              <td class="center">50.5%</td>
-              <td class="center mono">+102</td>
-              <td class="center mono">-102</td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
               <td class="center"><span class="chip neutral">Toss-up</span></td>
               <td>
         <div class="mBox">
           <div class="mHdr">
             <span class="chip pos">Pick: CHI</span>
-            <span class="muted mono" style="margin-left:10px;">P(CHI): 50.5% • raw: 50.8%</span>
+            <span class="muted mono" style="margin-left:10px;">P(CHI): 50.0% • raw: 50.0%</span>
           </div>
           <div class="mGrid">
             <div class="mCol ">
