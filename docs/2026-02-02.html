@@ -1,0 +1,809 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NHL Moneyline Model — 2026-02-02</title>
+  <style>
+    :root {
+      --bg:#0b0e14; --panel:#111624; --text:#e8ecf2; --muted:#aab3c2;
+      --line:rgba(255,255,255,.10); --chip:rgba(255,255,255,.10); --pos:rgba(70,200,120,.22);
+    }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+    .wrap { max-width:1200px; margin:28px auto; padding:0 16px; }
+    .head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:14px; }
+    .title { font-size:22px; font-weight:800; letter-spacing:.2px; }
+    .meta { color:var(--muted); font-size:13px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    .summaryCard { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+    .summaryTitle { font-weight:800; margin-bottom:10px; }
+    /* Model Summary tiles: force 2 columns (prevents GH Pages overflow) */
+    /* Model Summary tiles: force 2 columns (prevents GH Pages overflow) */
+    .summaryGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    
+    /* Mobile: stack */
+    @media (max-width: 720px){
+      .summaryGrid{ grid-template-columns: 1fr; }
+    }
+    
+    /* Prevent inner content from forcing overflow */
+    .summaryStat{ min-width:0; }
+
+
+
+    .summaryStat { background: rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:10px; }
+    .summaryStat .k { font-size:12px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+    .summaryStat .v { margin-top:6px; font-size:16px; font-weight:800; }
+
+    .summaryStat.highlight {
+      border-color: rgba(90,170,255,.75);
+      box-shadow:
+        0 0 0 1px rgba(90,170,255,.45) inset,
+        0 0 18px rgba(90,170,255,.12);
+      background: linear-gradient(
+        180deg,
+        rgba(90,170,255,.10) 0%,
+        rgba(90,170,255,.03) 100%
+      );
+    }
+    .summaryStat.highlight .k {
+      color: rgba(150,210,255,1);
+      font-weight: 900;
+      letter-spacing: .10em;
+    }
+    .summaryStat.highlight .v {
+      color: rgba(220,240,255,1);
+      font-weight: 900;
+    }
+
+    .recapBox { background: rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:10px; }
+    .recapRow { display:grid; grid-template-columns: 1.2fr 1.1fr 1fr; gap:10px; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .recapRow:last-child { border-bottom:none; }
+    .recapLeft { font-weight:700; }
+    .recapMid { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; }
+    .recapRight { text-align:right; }
+    .trend { display:inline-block; margin:0 6px; font-weight:900; }
+    .trendUp { color: rgba(70,200,120,.95); }
+    .trendDown { color: rgba(255,90,90,.95); }
+    .trendFlat { color: rgba(255,255,255,.55); }
+    .bucketGrid { display:grid; gap:6px; margin-top:8px; }
+    @media (max-width: 1100px) { .bucketGrid { grid-template-columns: repeat(2, 1fr); } }
+
+    .bucketChip { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); border-radius:10px; padding:8px; }
+    .bucketChip .bk { font-size:11px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+    .bucketChip .bv { margin-top:4px; font-size:12px; font-weight:800; }
+    .bucketChip .bn { margin-top:2px; font-size:11px; color:var(--muted); }
+
+    .sparkCard { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:14px; }
+    .sparkHdr { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:10px; }
+    .sparkTitle { font-weight:800; }
+    .sparkMeta { font-size:12px; color:var(--muted); }
+    .spark { display:block; width:100%; height:auto; }
+    /* ---------- Mobile table overflow fix ---------- */
+    
+    /* Wrap the table in a scroll container */
+    .tableScroll{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Keep table from shrinking weirdly */
+    .tableScroll table{
+      min-width: 980px;      /* adjust if you add/remove columns */
+      width:100%;
+    }
+    
+    /* Mobile tightening */
+    @media (max-width: 720px){
+      th, td{
+        padding:10px 10px;
+      }
+      .wrap{
+        padding:0 10px;
+      }
+      .title{
+        font-size:20px;
+      }
+      th{
+        font-size:11px;
+      }
+    }
+
+
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { text-align:left; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    tr:last-child td { border-bottom:none; }
+    .muted { color:var(--muted); }
+    .sub { margin-top:3px; font-size:12px; }
+    .center { text-align:center; }
+    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; }
+    .chip { display:inline-block; padding:6px 10px; border-radius:999px; background:var(--chip); border:1px solid var(--line); font-size:12px; }
+    .chip.pos { background:var(--pos); }
+    .chip.neutral { background:rgba(255,255,255,.08); }
+    .mBox { background: rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:10px; }
+    .mHdr { display:flex; align-items:center; margin-bottom:8px; }
+    .mGrid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .mCol { border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px; background: rgba(0,0,0,.10); }
+    .pickGlow { box-shadow: 0 0 0 1px rgba(70,200,120,.25) inset; border-color: rgba(70,200,120,.25); }
+    .mTeam { font-weight:800; margin-bottom:6px; }
+    .mLine { display:flex; justify-content:space-between; gap:10px; font-size:12px; line-height:1.35; }
+    .mk { color: var(--muted); }
+    .mv { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <div class="title">NHL Moneyline Model</div>
+        <div class="meta">2026-02-02 • timezone: America/Toronto • source: api-web.nhle.com • k=0.7 • C=0.5</div>
+      </div>
+      <div class="meta mono">learned + regularized</div>
+    </div>
+
+    
+    <div class="sparkCard">
+      <div class="sparkHdr">
+        <div class="sparkTitle">Prediction Rate</div>
+        <div class="sparkMeta">
+          <span class="mono">rolling 50g: <b>—</b></span>
+          <span class="muted" style="margin:0 10px;">•</span>
+          <span class="mono muted">all-time: 100.0%</span>
+          <span class="muted" style="margin:0 10px;">•</span>
+          <span class="mono muted">scored: 3g</span>
+        </div>
+      </div>
+      
+        <svg viewBox="0 0 560 56" width="560" height="56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="560" height="56" rx="10" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.10)"/>
+          <text x="6" y="28" fill="rgba(255,255,255,.55)" font-size="12" font-family="system-ui">No scored games yet</text>
+        </svg>
+        
+    </div>
+    
+    
+    <div class="summaryCard">
+      <div class="summaryTitle">Model Summary</div>
+
+      <div class="summaryGrid">
+        
+        <div class="summaryStat highlight">
+          <div class="k">All-time</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+        
+        <div class="summaryStat">
+          <div class="k">Last 90 days</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+        
+        <div class="summaryStat">
+          <div class="k">Last 60 days</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+        
+        <div class="summaryStat">
+          <div class="k">Last 30 days</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+        
+        <div class="summaryStat">
+          <div class="k">Last 7 days</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+        
+        <div class="summaryStat highlight">
+          <div class="k">Yesterday</div>
+          <div class="v">100.0% <span class="trend trendFlat">•</span> <span class="muted">(3 games)</span></div>
+          <div class="bucketGrid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="bucketChip">
+          <div class="bk">50-53</div>
+          <div class="bv">100.0%</div>
+          <div class="bn">3g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">53-58</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">58-65</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        
+        <div class="bucketChip">
+          <div class="bk">65-100</div>
+          <div class="bv">—</div>
+          <div class="bn">0g</div>
+        </div>
+        </div>
+        </div>
+        
+      </div>
+
+      <div class="summaryTitle" style="margin-top:14px;">Yesterday Recap <span class="muted">(2026-02-01)</span></div>
+      <div class="recapBox">
+        
+                <div class="recapRow">
+                  <div class="recapLeft">LAK @ CAR</div>
+                  <div class="recapMid">Pick: <b>CAR</b> <span class="muted">(50.0%)</span></div>
+                  <div class="recapRight">✅ <span class="muted">Actual: CAR</span></div>
+                </div>
+                
+
+                <div class="recapRow">
+                  <div class="recapLeft">BOS @ TBL</div>
+                  <div class="recapMid">Pick: <b>TBL</b> <span class="muted">(50.0%)</span></div>
+                  <div class="recapRight">✅ <span class="muted">Actual: TBL</span></div>
+                </div>
+                
+
+                <div class="recapRow">
+                  <div class="recapLeft">VGK @ ANA</div>
+                  <div class="recapMid">Pick: <b>ANA</b> <span class="muted">(50.0%)</span></div>
+                  <div class="recapRight">✅ <span class="muted">Actual: ANA</span></div>
+                </div>
+                
+      </div>
+    </div>
+    
+
+    <div class="card">
+        <div class="tableScroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Matchup</th>
+                <th class="center">P(Away)</th>
+                <th class="center">P(Home)</th>
+                <th class="center">Away ML</th>
+                <th class="center">Home ML</th>
+                <th class="center">Lean</th>
+                <th>Predicted Team Metrics</th>
+              </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td class="muted">10:00 PM</td>
+              <td><b>TOR</b> @ <b>CGY</b><div class="sub muted">Game 2025020885</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: CGY</span>
+            <span class="muted mono" style="margin-left:10px;">P(CGY): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">TOR</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">53.6%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.20</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">20.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">17.6% / 83.5%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">27.4 / 31.6</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">CGY</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">46.3%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.48</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">40.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">15.6% / 83.0%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">29.1 / 28.9</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">7:00 PM</td>
+              <td><b>BUF</b> @ <b>FLA</b><div class="sub muted">Game 2025020876</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: FLA</span>
+            <span class="muted mono" style="margin-left:10px;">P(FLA): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">BUF</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">62.0%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.39</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">70.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">19.6% / 82.8%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">27.8 / 29.7</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">FLA</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">54.6%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.20</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">18.4% / 82.9%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.8 / 25.8</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">7:00 PM</td>
+              <td><b>OTT</b> @ <b>PIT</b><div class="sub muted">Game 2025020877</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: PIT</span>
+            <span class="muted mono" style="margin-left:10px;">P(PIT): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">OTT</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">54.6%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.11</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">60.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">23.2% / 73.0%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.5 / 24.9</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">PIT</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">63.2%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.42</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">70.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">27.0% / 83.4%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">29.1 / 27.3</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">7:00 PM</td>
+              <td><b>NYI</b> @ <b>WSH</b><div class="sub muted">Game 2025020878</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: WSH</span>
+            <span class="muted mono" style="margin-left:10px;">P(WSH): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">NYI</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">59.1%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.13</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">16.2% / 81.6%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">27.7 / 27.9</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">WSH</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">54.5%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.16</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">40.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">16.3% / 78.5%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">29.2 / 28.4</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">7:30 PM</td>
+              <td><b>MTL</b> @ <b>MIN</b><div class="sub muted">Game 2025020879</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: MIN</span>
+            <span class="muted mono" style="margin-left:10px;">P(MIN): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">MTL</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">62.7%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.16</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">60.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">23.8% / 77.1%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">26.3 / 27.2</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">MIN</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">66.1%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.45</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">60.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">25.0% / 77.9%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.7 / 30.1</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">8:00 PM</td>
+              <td><b>STL</b> @ <b>NSH</b><div class="sub muted">Game 2025020880</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: NSH</span>
+            <span class="muted mono" style="margin-left:10px;">P(NSH): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">STL</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">44.5%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.98</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">30.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">17.2% / 73.5%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">25.0 / 27.7</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">NSH</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">51.9%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.50</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">21.1% / 81.2%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.5 / 29.1</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">8:30 PM</td>
+              <td><b>SJS</b> @ <b>CHI</b><div class="sub muted">Game 2025020881</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: CHI</span>
+            <span class="muted mono" style="margin-left:10px;">P(CHI): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">SJS</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">54.7%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.32</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">20.8% / 78.0%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">25.5 / 30.7</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">CHI</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">46.4%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.55</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">20.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">19.4% / 85.3%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">25.0 / 29.7</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">2</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">8:30 PM</td>
+              <td><b>WPG</b> @ <b>DAL</b><div class="sub muted">Game 2025020882</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: DAL</span>
+            <span class="muted mono" style="margin-left:10px;">P(DAL): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">WPG</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">47.2%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.19</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">18.7% / 79.5%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">26.1 / 28.1</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">DAL</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">66.4%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.56</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">60.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">30.0% / 80.2%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">25.5 / 27.0</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">9:00 PM</td>
+              <td><b>DET</b> @ <b>COL</b><div class="sub muted">Game 2025020883</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: COL</span>
+            <span class="muted mono" style="margin-left:10px;">P(COL): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">DET</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">62.5%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.00</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">50.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">23.3% / 79.6%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.4 / 27.9</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">COL</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">76.4%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+1.40</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">40.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">15.5% / 84.1%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">34.2 / 26.7</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            
+
+            <tr>
+              <td class="muted">9:30 PM</td>
+              <td><b>VAN</b> @ <b>UTA</b><div class="sub muted">Game 2025020884</div></td>
+              <td class="center">50.0%</td>
+              <td class="center">50.0%</td>
+              <td class="center mono">-100</td>
+              <td class="center mono">-100</td>
+              <td class="center"><span class="chip neutral">Toss-up</span></td>
+              <td>
+        <div class="mBox">
+          <div class="mHdr">
+            <span class="chip pos">Pick: UTA</span>
+            <span class="muted mono" style="margin-left:10px;">P(UTA): 50.0% • raw: 50.0%</span>
+          </div>
+          <div class="mGrid">
+            <div class="mCol ">
+              <div class="mTeam">VAN</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">38.2%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">-0.98</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">20.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">18.7% / 70.7%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">27.0 / 30.1</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+
+            <div class="mCol pickGlow">
+              <div class="mTeam">UTA</div>
+              <div class="mLine"><span class="mk">Pts%</span><span class="mv">54.5%</span></div>
+              <div class="mLine"><span class="mk">GD/GP</span><span class="mv">+0.35</span></div>
+              <div class="mLine"><span class="mk">L10 Pts%</span><span class="mv">60.0%</span></div>
+              <div class="mLine"><span class="mk">PP / PK</span><span class="mv">14.8% / 78.7%</span></div>
+              <div class="mLine"><span class="mk">SF / SA</span><span class="mv">28.0 / 26.0</span></div>
+              <div class="mLine"><span class="mk">Rest</span><span class="mv">1</span></div>
+            </div>
+          </div>
+        </div>
+        </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+</body>
+</html>
