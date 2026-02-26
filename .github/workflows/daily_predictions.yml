@@ -1,0 +1,49 @@
+name: Daily NHL Predictions
+
+on:
+  schedule:
+    # Runs at 11:00 AM UTC = 7:00 AM ET (before the day's games)
+    - cron: "0 11 * * *"
+  workflow_dispatch:  # Allow manual triggering from GitHub UI
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can commit back
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas requests scikit-learn
+
+      - name: Run daily predictions
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          # Override repo/branch if needed, or let the script defaults apply
+          # GITHUB_REPO: stat-trick-hockey/API_Model
+        run: |
+          python predx_api_V1.py \
+            --write_daily \
+            --publish_github \
+            --process_yesterday \
+            --season_start 2025-10-07
+
+      - name: Commit updated history CSV and coefficients
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/history_predictions.csv output/model_coefficients.csv
+          # Only commit if there are changes
+          git diff --cached --quiet || git commit -m "chore: update predictions $(date -u +%Y-%m-%d)"
+          git push
