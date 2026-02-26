@@ -44,6 +44,6 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output/history_predictions.csv output/model_coefficients.csv
-          # Only commit if there are changes
           git diff --cached --quiet || git commit -m "chore: update predictions $(date -u +%Y-%m-%d)"
+          git pull --rebase
           git push
