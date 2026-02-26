@@ -57,6 +57,22 @@ MAX_TRAIN_GAMES = None  # optionally set e.g. 2500
 CALIBRATION_K = 0.7  # 1.0=no shrink; smaller -> stronger shrink
 
 # =========================
+# HOME ICE BIAS
+# =========================
+# NHL home teams win ~54% historically. The model intercept alone doesn't fully
+# capture this — we add a small nudge in probability space AFTER calibration.
+# Set to 0.0 to disable. Typical range: 0.02 – 0.04
+HOME_ICE_BIAS = 0.03
+
+# =========================
+# RECENCY WEIGHTING
+# =========================
+# Exponential decay: games from N days ago get weight = exp(-RECENCY_HALFLIFE_DAYS * age/halflife)
+# Lower halflife = faster decay (recent games count more)
+# Set to None to disable (all games equal weight)
+RECENCY_HALFLIFE_DAYS = 60   # games ~60 days old get half the weight of today's games
+
+# =========================
 # Confidence buckets (custom, merged top bin)
 # =========================
 CONF_BINS = [0.50, 0.53, 0.58, 0.65, 1.00]
@@ -1184,6 +1200,26 @@ def train_model_from_history(history: pd.DataFrame, season_start: Optional[str],
     if len(X) < MIN_TRAIN_GAMES:
         log(f"🧠 Train: only {len(X)} games (need {MIN_TRAIN_GAMES}). Using fallback 50/50.")
         return None
+
+    # --- Recency weighting ---
+    # Exponential decay so recent games count more than early-season games.
+    sample_weight = None
+    if RECENCY_HALFLIFE_DAYS:
+        try:
+            dates = df["date_ymd"].astype(str)
+            if MAX_TRAIN_GAMES is not None and len(dates) > MAX_TRAIN_GAMES:
+                dates = dates.tail(MAX_TRAIN_GAMES)
+            max_date = dt.date.fromisoformat(dates.max())
+            ages = dates.apply(
+                lambda d: max(0, (max_date - dt.date.fromisoformat(d)).days)
+            )
+            decay = float(math.log(2) / RECENCY_HALFLIFE_DAYS)
+            sample_weight = ages.apply(lambda a: math.exp(-decay * a)).values
+            log(f"🧠 Recency weighting ON (halflife={RECENCY_HALFLIFE_DAYS}d) — "
+                f"oldest game weight: {sample_weight.min():.3f}, newest: {sample_weight.max():.3f}")
+        except Exception as e:
+            log(f"⚠️ Recency weighting failed, falling back to equal weights: {e}")
+            sample_weight = None
     
     pipe = Pipeline(
         steps=[
@@ -1196,7 +1232,12 @@ def train_model_from_history(history: pd.DataFrame, season_start: Optional[str],
             )),
         ]
     )
-    pipe.fit(X, y)
+    pipe.fit(X, y, clf__sample_weight=sample_weight)
+
+    # Log effective training size accounting for weights
+    if sample_weight is not None:
+        eff_n = int(sample_weight.sum() ** 2 / (sample_weight ** 2).sum())
+        log(f"🧠 Effective sample size (recency-weighted): ~{eff_n} of {len(X)} games")
 
     coef = pipe.named_steps["clf"].coef_[0]
     intercept = pipe.named_steps["clf"].intercept_[0]
@@ -1698,7 +1739,7 @@ def render_html(df: pd.DataFrame, date_ymd: str, tz_name: str, summary_html: str
     <div class="head">
       <div>
         <div class="title">NHL Moneyline Model</div>
-        <div class="meta">{date_ymd} • timezone: {tz_name} • source: api-web.nhle.com • k={CALIBRATION_K} • C=0.5</div>
+        <div class="meta">{date_ymd} • timezone: {tz_name} • source: api-web.nhle.com • k={CALIBRATION_K} • C=0.3 • home_bias={HOME_ICE_BIAS} • recency_halflife={RECENCY_HALFLIFE_DAYS}d</div>
       </div>
       <div class="meta mono">learned + regularized</div>
     </div>
@@ -1770,6 +1811,13 @@ def run_for_date(
             p_home_raw = 0.5
 
         p_home = shrink_to_50(p_home_raw, k=CALIBRATION_K)
+
+        # --- Home ice bias nudge ---
+        # Shift probability toward home team by HOME_ICE_BIAS, then renormalize.
+        # Applied after calibration so it doesn't interact with the shrink step.
+        if HOME_ICE_BIAS and HOME_ICE_BIAS != 0.0:
+            p_home = min(0.999, max(0.001, p_home + HOME_ICE_BIAS))
+
         p_away = 1.0 - p_home
 
         if debug_print and idx < 6:
