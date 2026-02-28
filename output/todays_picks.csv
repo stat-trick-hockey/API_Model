@@ -1,14 +1,3 @@
-pick
-COL
-DAL
-TBL
-SEA
-MTL
-LAK
-TOR
-CAR
-NYI
-PIT
-NJD
-EDM
-BOS
+row,pick_1,pick_2,pick_3,pick_4,pick_5,pick_6,pick_7,pick_8,pick_9,pick_10,pick_11,pick_12,pick_13
+team,COL,DAL,TBL,SEA,MTL,LAK,TOR,CAR,NYI,PIT,NJD,EDM,BOS
+ml,-540,-244,-236,-196,-166,-158,-156,-140,-124,-123,-118,-106,-102
