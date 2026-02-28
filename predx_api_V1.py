@@ -46,6 +46,8 @@ TZ_DEFAULT = "America/Toronto"
 OUT_DIR = "output"
 HISTORY_PATH = os.path.join(OUT_DIR, "history_predictions.csv")
 COEF_PATH = os.path.join(OUT_DIR, "model_coefficients.csv")
+RATES_PATH = os.path.join(OUT_DIR, "prediction_rates.csv")  # Tidbyt-friendly summary
+PICKS_PATH = os.path.join(OUT_DIR, "todays_picks.csv")       # Tidbyt-friendly daily picks
 
 UA = "Mozilla/5.0"
 
@@ -1772,6 +1774,118 @@ def render_html(df: pd.DataFrame, date_ymd: str, tz_name: str, summary_html: str
 
 
 # =========================
+# PREDICTION RATES CSV (Tidbyt-friendly)
+# =========================
+def write_todays_picks_csv(df: pd.DataFrame, as_of_date: str) -> None:
+    """
+    Write a single-column CSV of today's picks sorted by confidence (highest first).
+    Designed to be polled by Tidbyt.
+
+    Columns: pick
+    Example rows:
+        COL
+        BOS
+        PIT
+        ...
+    """
+    ensure_outdir(OUT_DIR)
+
+    if df is None or df.empty:
+        log("⚠️  todays_picks.csv: no games today, skipping.")
+        return
+
+    tmp = df.copy()
+    tmp["p_home"] = pd.to_numeric(tmp["p_home"], errors="coerce")
+    tmp["conf"] = tmp["p_home"].apply(lambda p: max(float(p), 1.0 - float(p)) if pd.notna(p) else 0.5)
+    tmp = tmp.sort_values("conf", ascending=False)
+
+    picks = tmp["predicted_winner"].dropna().tolist()
+    if not picks:
+        log("⚠️  todays_picks.csv: no predicted winners, skipping.")
+        return
+
+    pd.DataFrame({"pick": picks}).to_csv(PICKS_PATH, index=False)
+    log(f"🏒 Saved today's picks ({len(picks)} games): {PICKS_PATH}")
+
+
+def write_prediction_rates_csv(history: pd.DataFrame, as_of_date: str) -> None:
+    """
+    Write a compact prediction_rates.csv with one row per time window.
+    Designed to be polled by Tidbyt (or any simple HTTP client) via GitHub raw URL.
+
+    Columns: as_of, time_period, prediction_rate, games_scored
+    """
+    ensure_outdir(OUT_DIR)
+
+    h = history.copy()
+    if h.empty:
+        log("⚠️  prediction_rates.csv: history empty, skipping.")
+        return
+
+    if "date_ymd" not in h.columns:
+        return
+
+    h["date_ymd"] = h["date_ymd"].astype(str)
+    h["is_correct"] = pd.to_numeric(h.get("is_correct"), errors="coerce")
+    scored = h[h["is_correct"].isin([0, 1])].copy()
+
+    if scored.empty:
+        log("⚠️  prediction_rates.csv: no scored games yet, skipping.")
+        return
+
+    # Latest scored date drives all window calculations
+    latest_scored = scored["date_ymd"].max()
+
+    def window_acc(days: Optional[int]) -> dict:
+        """Return accuracy + game count for a rolling window (None = all-time)."""
+        if days is None:
+            sub = scored
+        else:
+            d1 = dt.date.fromisoformat(latest_scored)
+            d0 = d1 - dt.timedelta(days=days - 1)
+            sub = scored[scored["date_ymd"] >= d0.isoformat()]
+
+        n = len(sub)
+        if n == 0:
+            return {"prediction_rate": "", "games_scored": 0}
+        acc = float(sub["is_correct"].mean())
+        return {
+            "prediction_rate": f"{acc * 100:.1f}%",
+            "games_scored": n,
+        }
+
+    # Yesterday = the most recent date that has scored games
+    yesterday_scored = scored[scored["date_ymd"] == latest_scored]
+    n_y = len(yesterday_scored)
+    acc_y = float(yesterday_scored["is_correct"].mean()) if n_y > 0 else None
+
+    windows = [
+        ("All-time",    window_acc(None)),
+        ("Last 90 days", window_acc(90)),
+        ("Last 60 days", window_acc(60)),
+        ("Last 30 days", window_acc(30)),
+        ("Last 7 days",  window_acc(7)),
+        ("Yesterday",    {
+            "prediction_rate": f"{acc_y * 100:.1f}%" if acc_y is not None else "",
+            "games_scored": n_y,
+        }),
+    ]
+
+    rows = [
+        {
+            "as_of": as_of_date,
+            "time_period": label,
+            "prediction_rate": data["prediction_rate"],
+            "games_scored": data["games_scored"],
+        }
+        for label, data in windows
+    ]
+
+    pd.DataFrame(rows).to_csv(RATES_PATH, index=False)
+    log(f"📊 Saved prediction rates: {RATES_PATH}")
+
+
+# =========================
 # RUN ONE DATE
 # =========================
 def run_for_date(
@@ -1918,6 +2032,12 @@ def run_for_date(
 
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_text)
+
+        # Write Tidbyt-friendly prediction rates CSV
+        write_prediction_rates_csv(hist_now, as_of_date=date_ymd)
+
+        # Write Tidbyt-friendly today's picks CSV
+        write_todays_picks_csv(df, as_of_date=date_ymd)
 
         log(f"Saved daily: {csv_path}")
         log(f"Saved daily: {html_path}")
