@@ -1803,31 +1803,41 @@ def write_todays_picks_csv(df: pd.DataFrame, as_of_date: str) -> None:
 
     picks = tmp["predicted_winner"].tolist()
 
-    # Pull the correct moneyline for each pick (away_ml or home_ml)
+    # Pull the correct moneyline and win probability for each pick
     moneylines = []
+    win_probs = []
     for _, row in tmp.iterrows():
         pick = row["predicted_winner"]
+        p_home = row.get("p_home")
         if pick == row.get("home"):
             ml = row.get("home_ml_fair")
+            prob = p_home
         else:
             ml = row.get("away_ml_fair")
-        # Format as +120 / -273 string
+            prob = 1.0 - float(p_home) if pd.notna(p_home) else None
+        # Format ML as +120 / -273
         try:
-            ml_val = int(ml)
-            moneylines.append(f"{ml_val:+d}")
+            moneylines.append(f"{int(ml):+d}")
         except (TypeError, ValueError):
             moneylines.append("")
+        # Format probability as 73.2%
+        try:
+            win_probs.append(f"{float(prob)*100:.1f}%")
+        except (TypeError, ValueError):
+            win_probs.append("")
 
     cols = [f"pick_{i+1}" for i in range(len(picks))]
-    out = pd.DataFrame([picks, moneylines], columns=cols)
-    out.insert(0, "row", ["team", "ml"])
+    out = pd.DataFrame([picks, moneylines, win_probs], columns=cols)
+    out.insert(0, "row", ["team", "ml", "prob"])
     out.to_csv(PICKS_PATH, index=False)
 
-    # JSON version — cleaner for apps that prefer structured data
-    # Format: {"as_of": "2026-02-26", "picks": [{"team": "COL", "ml": "-273"}, ...]}
+    # JSON version
     picks_json = {
         "as_of": as_of_date,
-        "picks": [{"team": t, "ml": ml} for t, ml in zip(picks, moneylines)],
+        "picks": [
+            {"team": t, "ml": ml, "prob": prob}
+            for t, ml, prob in zip(picks, moneylines, win_probs)
+        ],
     }
     with open(PICKS_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(picks_json, f, indent=2)
