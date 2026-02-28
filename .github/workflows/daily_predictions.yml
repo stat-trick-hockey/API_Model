@@ -14,7 +14,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          # Fetch full history so we can commit back
           fetch-depth: 0
 
       - name: Set up Python
@@ -30,8 +29,6 @@ jobs:
       - name: Run daily predictions
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
-          # Override repo/branch if needed, or let the script defaults apply
-          # GITHUB_REPO: stat-trick-hockey/API_Model
         run: |
           python predx_api_V1.py \
             --write_daily \
@@ -39,11 +36,25 @@ jobs:
             --process_yesterday \
             --season_start 2025-10-07
 
-      - name: Commit updated history CSV and coefficients
+      - name: Commit updated CSVs
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add output/history_predictions.csv output/model_coefficients.csv
+
+          # Copy both Tidbyt CSVs to docs/ for GitHub Pages serving
+          # prediction_rates: https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/prediction_rates.csv
+          # todays_picks:     https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/todays_picks.csv
+          cp output/prediction_rates.csv docs/prediction_rates.csv
+          cp output/todays_picks.csv docs/todays_picks.csv
+
+          git add \
+            output/history_predictions.csv \
+            output/model_coefficients.csv \
+            output/prediction_rates.csv \
+            output/todays_picks.csv \
+            docs/prediction_rates.csv \
+            docs/todays_picks.csv
+
           git diff --cached --quiet || git commit -m "chore: update predictions $(date -u +%Y-%m-%d)"
           git pull --rebase
           git push
