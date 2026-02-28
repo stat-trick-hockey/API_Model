@@ -1778,15 +1778,10 @@ def render_html(df: pd.DataFrame, date_ymd: str, tz_name: str, summary_html: str
 # =========================
 def write_todays_picks_csv(df: pd.DataFrame, as_of_date: str) -> None:
     """
-    Write a single-column CSV of today's picks sorted by confidence (highest first).
+    Write today's picks as a 3-row CSV — one column per game, sorted by confidence.
+    Row 1 (picks):      team abbreviations  e.g. COL, BOS, PIT ...
+    Row 2 (moneylines): fair ML for pick    e.g. -273, -187, -166 ...
     Designed to be polled by Tidbyt.
-
-    Columns: pick
-    Example rows:
-        COL
-        BOS
-        PIT
-        ...
     """
     ensure_outdir(OUT_DIR)
 
@@ -1798,13 +1793,33 @@ def write_todays_picks_csv(df: pd.DataFrame, as_of_date: str) -> None:
     tmp["p_home"] = pd.to_numeric(tmp["p_home"], errors="coerce")
     tmp["conf"] = tmp["p_home"].apply(lambda p: max(float(p), 1.0 - float(p)) if pd.notna(p) else 0.5)
     tmp = tmp.sort_values("conf", ascending=False)
+    tmp = tmp[tmp["predicted_winner"].notna()].copy()
 
-    picks = tmp["predicted_winner"].dropna().tolist()
-    if not picks:
+    if tmp.empty:
         log("⚠️  todays_picks.csv: no predicted winners, skipping.")
         return
 
-    pd.DataFrame({"pick": picks}).to_csv(PICKS_PATH, index=False)
+    picks = tmp["predicted_winner"].tolist()
+
+    # Pull the correct moneyline for each pick (away_ml or home_ml)
+    moneylines = []
+    for _, row in tmp.iterrows():
+        pick = row["predicted_winner"]
+        if pick == row.get("home"):
+            ml = row.get("home_ml_fair")
+        else:
+            ml = row.get("away_ml_fair")
+        # Format as +120 / -273 string
+        try:
+            ml_val = int(ml)
+            moneylines.append(f"{ml_val:+d}")
+        except (TypeError, ValueError):
+            moneylines.append("")
+
+    cols = [f"pick_{i+1}" for i in range(len(picks))]
+    out = pd.DataFrame([picks, moneylines], columns=cols)
+    out.insert(0, "row", ["team", "ml"])
+    out.to_csv(PICKS_PATH, index=False)
     log(f"🏒 Saved today's picks ({len(picks)} games): {PICKS_PATH}")
 
 
@@ -1860,12 +1875,12 @@ def write_prediction_rates_csv(history: pd.DataFrame, as_of_date: str) -> None:
     acc_y = float(yesterday_scored["is_correct"].mean()) if n_y > 0 else None
 
     windows = [
-        ("All-time",    window_acc(None)),
-        ("Last 90 days", window_acc(90)),
-        ("Last 60 days", window_acc(60)),
-        ("Last 30 days", window_acc(30)),
-        ("Last 7 days",  window_acc(7)),
-        ("Yesterday",    {
+        ("All-Time",  window_acc(None)),
+        ("Last90d",   window_acc(90)),
+        ("Last60d",   window_acc(60)),
+        ("Last30d",   window_acc(30)),
+        ("Last7d",    window_acc(7)),
+        ("Yday",      {
             "prediction_rate": f"{acc_y * 100:.1f}%" if acc_y is not None else "",
             "games_scored": n_y,
         }),
