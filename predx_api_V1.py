@@ -46,8 +46,10 @@ TZ_DEFAULT = "America/Toronto"
 OUT_DIR = "output"
 HISTORY_PATH = os.path.join(OUT_DIR, "history_predictions.csv")
 COEF_PATH = os.path.join(OUT_DIR, "model_coefficients.csv")
-RATES_PATH = os.path.join(OUT_DIR, "prediction_rates.csv")  # Tidbyt-friendly summary
-PICKS_PATH = os.path.join(OUT_DIR, "todays_picks.csv")       # Tidbyt-friendly daily picks
+RATES_PATH = os.path.join(OUT_DIR, "prediction_rates.csv")   # Tidbyt-friendly summary
+RATES_JSON_PATH = os.path.join(OUT_DIR, "prediction_rates.json")
+PICKS_PATH = os.path.join(OUT_DIR, "todays_picks.csv")        # Tidbyt-friendly daily picks
+PICKS_JSON_PATH = os.path.join(OUT_DIR, "todays_picks.json")
 
 UA = "Mozilla/5.0"
 
@@ -1820,7 +1822,17 @@ def write_todays_picks_csv(df: pd.DataFrame, as_of_date: str) -> None:
     out = pd.DataFrame([picks, moneylines], columns=cols)
     out.insert(0, "row", ["team", "ml"])
     out.to_csv(PICKS_PATH, index=False)
-    log(f"🏒 Saved today's picks ({len(picks)} games): {PICKS_PATH}")
+
+    # JSON version — cleaner for apps that prefer structured data
+    # Format: {"as_of": "2026-02-26", "picks": [{"team": "COL", "ml": "-273"}, ...]}
+    picks_json = {
+        "as_of": as_of_date,
+        "picks": [{"team": t, "ml": ml} for t, ml in zip(picks, moneylines)],
+    }
+    with open(PICKS_JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(picks_json, f, indent=2)
+
+    log(f"🏒 Saved today's picks ({len(picks)} games): {PICKS_PATH} + {PICKS_JSON_PATH}")
 
 
 def write_prediction_rates_csv(history: pd.DataFrame, as_of_date: str) -> None:
@@ -1897,7 +1909,17 @@ def write_prediction_rates_csv(history: pd.DataFrame, as_of_date: str) -> None:
     ]
 
     pd.DataFrame(rows).to_csv(RATES_PATH, index=False)
-    log(f"📊 Saved prediction rates: {RATES_PATH}")
+
+    # JSON version — cleaner for apps that prefer structured data
+    # Format: {"as_of": "2026-02-26", "rates": [{"time_period": "All-Time", "prediction_rate": "60.9%", "games_scored": 2251}, ...]}
+    rates_json = {
+        "as_of": as_of_date,
+        "rates": rows,
+    }
+    with open(RATES_JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(rates_json, f, indent=2)
+
+    log(f"📊 Saved prediction rates: {RATES_PATH} + {RATES_JSON_PATH}")
 
 
 # =========================
