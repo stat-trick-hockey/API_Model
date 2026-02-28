@@ -29,6 +29,7 @@ jobs:
       - name: Run daily predictions
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python predx_api_V1.py \
             --write_daily \
