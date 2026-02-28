@@ -1868,11 +1868,14 @@ Example: TBL - best recent form on slate"""
             json={
                 "model": POTD_MODEL,
                 "max_tokens": 60,
+                "system": "You are an NHL betting analyst. Respond only with the pick in the exact format requested. No extra text.",
                 "messages": [{"role": "user", "content": prompt}],
             },
             timeout=30,
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            log(f"⚠️  POTD: API error {resp.status_code}: {resp.text[:300]}")
+            return ""
         data = resp.json()
         potd = data["content"][0]["text"].strip()
         # Sanity check — must contain " - " and be reasonably short
