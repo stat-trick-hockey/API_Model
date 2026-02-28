@@ -36,24 +36,33 @@ jobs:
             --process_yesterday \
             --season_start 2025-10-07
 
-      - name: Commit updated CSVs
+      - name: Commit updated CSVs and JSON
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Copy both Tidbyt CSVs to docs/ for GitHub Pages serving
-          # prediction_rates: https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/prediction_rates.csv
-          # todays_picks:     https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/todays_picks.csv
-          cp output/prediction_rates.csv docs/prediction_rates.csv
-          cp output/todays_picks.csv docs/todays_picks.csv
+          # Copy Tidbyt files to docs/ for GitHub Pages serving
+          # Raw URLs:
+          #   https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/prediction_rates.csv
+          #   https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/prediction_rates.json
+          #   https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/todays_picks.csv
+          #   https://raw.githubusercontent.com/stat-trick-hockey/API_Model/main/docs/todays_picks.json
+          cp output/prediction_rates.csv  docs/prediction_rates.csv
+          cp output/prediction_rates.json docs/prediction_rates.json
+          cp output/todays_picks.csv      docs/todays_picks.csv
+          cp output/todays_picks.json     docs/todays_picks.json
 
           git add \
             output/history_predictions.csv \
             output/model_coefficients.csv \
             output/prediction_rates.csv \
+            output/prediction_rates.json \
             output/todays_picks.csv \
+            output/todays_picks.json \
             docs/prediction_rates.csv \
-            docs/todays_picks.csv
+            docs/prediction_rates.json \
+            docs/todays_picks.csv \
+            docs/todays_picks.json
 
           git diff --cached --quiet || git commit -m "chore: update predictions $(date -u +%Y-%m-%d)"
           git pull --rebase
