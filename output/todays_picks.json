@@ -1,6 +1,6 @@
 {
   "as_of": "2026-02-28",
-  "potd": "",
+  "potd": "COL - elite goal differential advantage",
   "picks": [
     {
       "team": "COL",
@@ -43,29 +43,29 @@
       "prob": "58.3%"
     },
     {
+      "team": "NJD",
+      "ml": "-126",
+      "prob": "55.7%"
+    },
+    {
       "team": "NYI",
       "ml": "-124",
       "prob": "55.3%"
     },
     {
       "team": "PIT",
-      "ml": "-123",
-      "prob": "55.2%"
+      "ml": "-117",
+      "prob": "53.9%"
     },
     {
-      "team": "NJD",
-      "ml": "-118",
-      "prob": "54.0%"
-    },
-    {
-      "team": "EDM",
+      "team": "PHI",
       "ml": "-106",
-      "prob": "51.5%"
+      "prob": "51.4%"
     },
     {
-      "team": "BOS",
-      "ml": "-102",
-      "prob": "50.6%"
+      "team": "SJS",
+      "ml": "-101",
+      "prob": "50.2%"
     }
   ]
 }

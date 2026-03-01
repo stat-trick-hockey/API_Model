@@ -5,36 +5,36 @@
       "as_of": "2026-02-28",
       "time_period": "All-Time",
       "prediction_rate": "61.0%",
-      "games_scored": 2267
+      "games_scored": 2271
     },
     {
       "as_of": "2026-02-28",
       "time_period": "Last90d",
-      "prediction_rate": "57.6%",
+      "prediction_rate": "57.8%",
       "games_scored": 531
     },
     {
       "as_of": "2026-02-28",
       "time_period": "Last60d",
-      "prediction_rate": "57.9%",
-      "games_scored": 316
+      "prediction_rate": "57.8%",
+      "games_scored": 315
     },
     {
       "as_of": "2026-02-28",
       "time_period": "Last30d",
-      "prediction_rate": "69.2%",
-      "games_scored": 91
+      "prediction_rate": "72.5%",
+      "games_scored": 80
     },
     {
       "as_of": "2026-02-28",
       "time_period": "Last7d",
-      "prediction_rate": "83.3%",
-      "games_scored": 24
+      "prediction_rate": "82.1%",
+      "games_scored": 28
     },
     {
       "as_of": "2026-02-28",
       "time_period": "Yday",
-      "prediction_rate": "100.0%",
+      "prediction_rate": "75.0%",
       "games_scored": 4
     }
   ]

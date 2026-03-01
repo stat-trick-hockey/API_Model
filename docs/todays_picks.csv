@@ -1,5 +1,5 @@
 row,pick_1,pick_2,pick_3,pick_4,pick_5,pick_6,pick_7,pick_8,pick_9,pick_10,pick_11,pick_12,pick_13
-team,COL,DAL,TBL,SEA,MTL,LAK,TOR,CAR,NYI,PIT,NJD,EDM,BOS
-ml,-540,-244,-236,-196,-166,-158,-156,-140,-124,-123,-118,-106,-102
-prob,84.4%,70.9%,70.3%,66.2%,62.4%,61.3%,60.9%,58.3%,55.3%,55.2%,54.0%,51.5%,50.6%
-potd,,,,,,,,,,,,,
+team,COL,DAL,TBL,SEA,MTL,LAK,TOR,CAR,NJD,NYI,PIT,PHI,SJS
+ml,-540,-244,-236,-196,-166,-158,-156,-140,-126,-124,-117,-106,-101
+prob,84.4%,70.9%,70.3%,66.2%,62.4%,61.3%,60.9%,58.3%,55.7%,55.3%,53.9%,51.4%,50.2%
+potd,COL - elite goal differential advantage,,,,,,,,,,,,
