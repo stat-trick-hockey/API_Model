@@ -1898,23 +1898,31 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
 
     for i, (away, home) in enumerate(game_pairs):
         research_prompt = (
-            f"NHL {away} at {home} on {as_of_date}. "
-            f"For each team: goalie starter if known, key injuries, one-line form note. "
-            f"1-2 sentences per team. Confirmed facts only."
+            f"What is the goalie starting for {away} and {home} in their NHL game on {as_of_date}? "
+            f"Are there any injuries for either team? Give 1-2 sentences per team only."
         )
         try:
-            resp = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers=headers,
-                json={
-                    "model": POTD_RESEARCH_MODEL,
-                    "max_tokens": 150,
-                    "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                    "system": "You are a concise NHL news researcher. 1-2 sentences per team max. Only confirmed facts.",
-                    "messages": [{"role": "user", "content": research_prompt}],
-                },
-                timeout=45,
-            )
+            # Retry up to 3 times on 429 with exponential backoff
+            resp = None
+            for attempt in range(3):
+                resp = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers=headers,
+                    json={
+                        "model": POTD_RESEARCH_MODEL,
+                        "max_tokens": 150,
+                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+                        "system": "You are a concise NHL news researcher. 1-2 sentences per team max. Only confirmed facts.",
+                        "messages": [{"role": "user", "content": research_prompt}],
+                    },
+                    timeout=45,
+                )
+                if resp.status_code == 429:
+                    wait = 6 * (attempt + 1)
+                    log(f"  ⏳ Rate limited on {away}@{home}, waiting {wait}s (attempt {attempt+1}/3)...")
+                    time.sleep(wait)
+                else:
+                    break
             if not resp.ok:
                 log(f"  ⚠️  Research failed for {away}@{home}: {resp.status_code}")
                 research_findings[away] = "No data available."
@@ -1935,9 +1943,9 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
             log(f"  ⚠️  Research exception for {away}@{home}: {e}")
             research_findings[f"{away}@{home}"] = "No data available."
 
-        # Respectful delay between calls to avoid rate limiting
+        # Delay between calls to avoid rate limiting
         if i < len(game_pairs) - 1:
-            time.sleep(2)
+            time.sleep(4)
 
     # Build research block for phase 2
     research_block = "\n".join(
