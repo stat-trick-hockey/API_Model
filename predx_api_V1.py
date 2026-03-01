@@ -1872,13 +1872,15 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
         )
     games_block = "\n".join(game_lines)
 
-    # Collect unique teams playing today
+    # Collect games as (away, home) pairs — search both teams per game in one call
+    game_pairs = [(row.get("away", ""), row.get("home", "")) for _, row in tmp.iterrows()]
+    # Unique teams for deduplication (some teams play twice in rare cases)
     teams_today = []
-    for _, row in tmp.iterrows():
-        for side in ["away", "home"]:
-            t = row.get(side, "")
-            if t and t not in teams_today:
-                teams_today.append(t)
+    for away, home in game_pairs:
+        if away and away not in teams_today:
+            teams_today.append(away)
+        if home and home not in teams_today:
+            teams_today.append(home)
 
     headers = {
         "x-api-key": api_key,
@@ -1887,18 +1889,18 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
     }
 
     # -------------------------------------------------------
-    # PHASE 1: Research — one web search call per team
+    # PHASE 1: Research — one web search call per GAME (both teams)
+    # Batching two teams per call halves the number of requests,
+    # and a 2s delay between calls avoids 429 rate limits.
     # -------------------------------------------------------
-    log(f"🔍 POTD research phase: searching {len(teams_today)} teams...")
+    log(f"🔍 POTD research phase: searching {len(game_pairs)} games ({len(teams_today)} teams)...")
     research_findings = {}
 
-    for team in teams_today:
+    for i, (away, home) in enumerate(game_pairs):
         research_prompt = (
-            f"Search for the latest news on the NHL {team} for today {as_of_date}. "
-            f"Find: (1) confirmed goalie starter if announced, "
-            f"(2) any key injuries or player absences, "
-            f"(3) one sentence on their recent form or momentum. "
-            f"Be concise — 3-4 sentences max. Only report confirmed facts from search results."
+            f"NHL {away} at {home} on {as_of_date}. "
+            f"For each team: goalie starter if known, key injuries, one-line form note. "
+            f"1-2 sentences per team. Confirmed facts only."
         )
         try:
             resp = requests.post(
@@ -1906,32 +1908,36 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
                 headers=headers,
                 json={
                     "model": POTD_RESEARCH_MODEL,
-                    "max_tokens": 300,
+                    "max_tokens": 150,
                     "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                    "system": "You are a concise NHL news researcher. Search for the requested team info and summarize findings in 3-4 sentences. Only report confirmed facts.",
+                    "system": "You are a concise NHL news researcher. 1-2 sentences per team max. Only confirmed facts.",
                     "messages": [{"role": "user", "content": research_prompt}],
                 },
                 timeout=45,
             )
             if not resp.ok:
-                log(f"  ⚠️  Research failed for {team}: {resp.status_code}")
-                research_findings[team] = "No data available."
-                continue
-
-            data = resp.json()
-            # Extract text blocks from response (may include tool_use and tool_result blocks)
-            text_parts = [
-                block["text"]
-                for block in data.get("content", [])
-                if block.get("type") == "text" and block.get("text", "").strip()
-            ]
-            summary = " ".join(text_parts).strip() or "No data available."
-            research_findings[team] = summary
-            log(f"  ✅ {team}: {summary[:80]}...")
+                log(f"  ⚠️  Research failed for {away}@{home}: {resp.status_code}")
+                research_findings[away] = "No data available."
+                research_findings[home] = "No data available."
+            else:
+                data = resp.json()
+                text_parts = [
+                    block["text"]
+                    for block in data.get("content", [])
+                    if block.get("type") == "text" and block.get("text", "").strip()
+                ]
+                summary = " ".join(text_parts).strip() or "No data available."
+                # Store under both teams — the summary covers both
+                research_findings[f"{away}@{home}"] = summary
+                log(f"  ✅ {away}@{home}: {summary[:80]}...")
 
         except Exception as e:
-            log(f"  ⚠️  Research exception for {team}: {e}")
-            research_findings[team] = "No data available."
+            log(f"  ⚠️  Research exception for {away}@{home}: {e}")
+            research_findings[f"{away}@{home}"] = "No data available."
+
+        # Respectful delay between calls to avoid rate limiting
+        if i < len(game_pairs) - 1:
+            time.sleep(2)
 
     # Build research block for phase 2
     research_block = "\n".join(
