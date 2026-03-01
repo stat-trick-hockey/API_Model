@@ -55,8 +55,7 @@ PICKS_JSON_PATH = os.path.join(OUT_DIR, "todays_picks.json")
 # Set ANTHROPIC_API_KEY in env (GitHub Actions secret) to enable.
 # If key is missing, POTD row is left blank rather than crashing.
 ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
-POTD_MODEL = "claude-sonnet-4-6"               # Phase 2: analysis + synthesis
-POTD_RESEARCH_MODEL = "claude-haiku-4-5-20251001"  # Phase 1: per-team web searches (cheap)
+POTD_MODEL = "claude-sonnet-4-6"               # Analysis + synthesis (single call per day)
 
 UA = "Mozilla/5.0"
 
@@ -1872,86 +1871,83 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
         )
     games_block = "\n".join(game_lines)
 
-    # Collect games as (away, home) pairs — search both teams per game in one call
+    # All games sorted by confidence — top 3 get full injury research, rest get goalies only
     game_pairs = [(row.get("away", ""), row.get("home", "")) for _, row in tmp.iterrows()]
-    # Unique teams for deduplication (some teams play twice in rare cases)
-    teams_today = []
-    for away, home in game_pairs:
-        if away and away not in teams_today:
-            teams_today.append(away)
-        if home and home not in teams_today:
-            teams_today.append(home)
+    research_pairs = game_pairs[:3]
 
-    headers = {
+    headers_anthropic = {
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
     }
 
     # -------------------------------------------------------
-    # PHASE 1: Research — one web search call per GAME (both teams)
-    # Batching two teams per call halves the number of requests,
-    # and a 2s delay between calls avoids 429 rate limits.
+    # PHASE 1: Free research — NHL API (goalies) + ESPN (injuries)
+    # Zero Anthropic API calls, zero cost.
     # -------------------------------------------------------
-    log(f"🔍 POTD research phase: searching {len(game_pairs)} games ({len(teams_today)} teams)...")
-    research_findings = {}
+    log("🔍 POTD research phase: fetching goalie/injury data (free NHL + ESPN APIs)...")
 
-    for i, (away, home) in enumerate(game_pairs):
-        research_prompt = (
-            f"What is the goalie starting for {away} and {home} in their NHL game on {as_of_date}? "
-            f"Are there any injuries for either team? Give 1-2 sentences per team only."
-        )
+    # Step 1a: Probable goalies from NHL schedule API
+    goalie_map: Dict[str, str] = {}
+    try:
+        sched = fetch_json(f"https://api-web.nhle.com/v1/schedule/{as_of_date}")
+        for game_week in sched.get("gameWeek", []):
+            for game in game_week.get("games", []):
+                if str(game.get("gameDate", ""))[:10] != as_of_date:
+                    continue
+                for side, key in [("awayTeam", "awayProbableGoalie"), ("homeTeam", "homeProbableGoalie")]:
+                    abbrev = game.get(side, {}).get("abbrev", "")
+                    probable = game.get(key, {})
+                    if probable and abbrev:
+                        fname = probable.get("firstName", {})
+                        lname = probable.get("lastName", {})
+                        if isinstance(fname, dict): fname = fname.get("default", "")
+                        if isinstance(lname, dict): lname = lname.get("default", "")
+                        name = f"{fname} {lname}".strip()
+                        if name:
+                            goalie_map[abbrev] = name
+        log(f"  ✅ Probable goalies: {goalie_map}")
+    except Exception as e:
+        log(f"  ⚠️  Goalie fetch failed: {e}")
+
+    # Step 1b: Injuries from ESPN for top-3 game teams only
+    injury_map: Dict[str, str] = {}
+    top_teams = list({t for pair in research_pairs for t in pair})
+    for team_abbrev in top_teams:
         try:
-            # Retry up to 3 times on 429 with exponential backoff
-            resp = None
-            for attempt in range(3):
-                resp = requests.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers=headers,
-                    json={
-                        "model": POTD_RESEARCH_MODEL,
-                        "max_tokens": 150,
-                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                        "system": "You are a concise NHL news researcher. 1-2 sentences per team max. Only confirmed facts.",
-                        "messages": [{"role": "user", "content": research_prompt}],
-                    },
-                    timeout=45,
-                )
-                if resp.status_code == 429:
-                    wait = 6 * (attempt + 1)
-                    log(f"  ⏳ Rate limited on {away}@{home}, waiting {wait}s (attempt {attempt+1}/3)...")
-                    time.sleep(wait)
-                else:
-                    break
-            if not resp.ok:
-                log(f"  ⚠️  Research failed for {away}@{home}: {resp.status_code}")
-                research_findings[away] = "No data available."
-                research_findings[home] = "No data available."
-            else:
-                data = resp.json()
-                text_parts = [
-                    block["text"]
-                    for block in data.get("content", [])
-                    if block.get("type") == "text" and block.get("text", "").strip()
-                ]
-                summary = " ".join(text_parts).strip() or "No data available."
-                # Store under both teams — the summary covers both
-                research_findings[f"{away}@{home}"] = summary
-                log(f"  ✅ {away}@{home}: {summary[:80]}...")
-
+            url = f"https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{team_abbrev}/injuries"
+            data = fetch_json(url, timeout=10, tries=2)
+            injuries = []
+            for entry in data.get("injuries", []):
+                name = entry.get("athlete", {}).get("displayName", "")
+                status = entry.get("status", "")
+                desc = entry.get("description", "")
+                if name and status and status.lower() not in ("active",):
+                    injuries.append(f"{name} ({status}{': ' + desc if desc else ''})")
+            injury_map[team_abbrev] = ", ".join(injuries[:4]) if injuries else "None reported"
+            log(f"  ✅ {team_abbrev} injuries: {injury_map[team_abbrev][:60]}")
         except Exception as e:
-            log(f"  ⚠️  Research exception for {away}@{home}: {e}")
-            research_findings[f"{away}@{home}"] = "No data available."
+            injury_map[team_abbrev] = "Unavailable"
+            log(f"  ⚠️  Injury fetch failed for {team_abbrev}: {e}")
 
-        # Delay between calls to avoid rate limiting
-        if i < len(game_pairs) - 1:
-            time.sleep(4)
-
-    # Build research block for phase 2
-    research_block = "\n".join(
-        f"{team}: {finding}"
-        for team, finding in research_findings.items()
-    )
+    # Step 1c: Build research block
+    research_lines = []
+    for away, home in game_pairs:
+        away_goalie = goalie_map.get(away, "TBD")
+        home_goalie = goalie_map.get(home, "TBD")
+        if (away, home) in research_pairs:
+            away_inj = injury_map.get(away, "Not fetched")
+            home_inj = injury_map.get(home, "Not fetched")
+            research_lines.append(
+                f"{away}@{home}: "
+                f"{away} goalie={away_goalie}, injuries=[{away_inj}] | "
+                f"{home} goalie={home_goalie}, injuries=[{home_inj}]"
+            )
+        else:
+            research_lines.append(
+                f"{away}@{home}: {away} goalie={away_goalie} | {home} goalie={home_goalie}"
+            )
+    research_block = "\n".join(research_lines)
 
     # -------------------------------------------------------
     # PHASE 2: Analysis — synthesize research + stats → POTD
@@ -1997,7 +1993,7 @@ COMMENTARY: Colorado's +0.82 GD/G leads the slate and they enter on 2 days rest.
     try:
         resp = requests.post(
             "https://api.anthropic.com/v1/messages",
-            headers=headers,
+            headers=headers_anthropic,
             json={
                 "model": POTD_MODEL,
                 "max_tokens": 300,
