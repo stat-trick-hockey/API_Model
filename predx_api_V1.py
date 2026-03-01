@@ -2576,7 +2576,7 @@ def main() -> None:
                     schedule_cache=schedule_cache,
                     model_pipe=model_pipe,
                     use_clubstats=not args.no_clubstats,
-                    write_daily=bool(args.write_daily),
+                    write_daily=bool(args.write_daily) and (date_ymd == today.isoformat()),
                     max_teams=args.max_teams,
                     debug_print=True,
                 )
