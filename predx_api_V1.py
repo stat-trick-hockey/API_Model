@@ -1887,45 +1887,95 @@ def generate_pick_of_the_day(df: pd.DataFrame, as_of_date: str) -> tuple:
     # -------------------------------------------------------
     log("🔍 POTD research phase: fetching goalie/injury data (free NHL + ESPN APIs)...")
 
-    # Step 1a: Probable goalies from NHL schedule API
+    # Build set of teams on a B2B today — they'll likely start their backup
+    b2b_teams = set()
+    for _, row in tmp.iterrows():
+        try:
+            if float(row.get("away_b2b", 0)) >= 1.0:
+                b2b_teams.add(row.get("away", ""))
+            if float(row.get("home_b2b", 0)) >= 1.0:
+                b2b_teams.add(row.get("home", ""))
+        except (TypeError, ValueError):
+            pass
+    if b2b_teams:
+        log(f"  🔄 B2B teams (likely backup goalie): {b2b_teams}")
+
+    # Step 1a: Goalies from NHL gamecenter landing (matchup.goalieComparison)
     goalie_map: Dict[str, str] = {}
     try:
-        sched = fetch_json(f"https://api-web.nhle.com/v1/schedule/{as_of_date}")
-        for game_week in sched.get("gameWeek", []):
-            for game in game_week.get("games", []):
-                if str(game.get("gameDate", ""))[:10] != as_of_date:
-                    continue
-                for side, key in [("awayTeam", "awayProbableGoalie"), ("homeTeam", "homeProbableGoalie")]:
-                    abbrev = game.get(side, {}).get("abbrev", "")
-                    probable = game.get(key, {})
-                    if probable and abbrev:
-                        fname = probable.get("firstName", {})
-                        lname = probable.get("lastName", {})
-                        if isinstance(fname, dict): fname = fname.get("default", "")
-                        if isinstance(lname, dict): lname = lname.get("default", "")
-                        name = f"{fname} {lname}".strip()
-                        if name:
-                            goalie_map[abbrev] = name
-        log(f"  ✅ Probable goalies: {goalie_map}")
+        scoreboard = fetch_json(f"https://api-web.nhle.com/v1/score/{as_of_date}")
+        for game in scoreboard.get("games", []):
+            game_id = game.get("id")
+            away_abbrev = game.get("awayTeam", {}).get("abbrev", "")
+            home_abbrev = game.get("homeTeam", {}).get("abbrev", "")
+            if not game_id:
+                continue
+            try:
+                landing = fetch_json(f"https://api-web.nhle.com/v1/gamecenter/{game_id}/landing")
+                gc = landing.get("matchup", {}).get("goalieComparison", {})
+                for side, abbrev in [("awayTeam", away_abbrev), ("homeTeam", home_abbrev)]:
+                    leaders = gc.get(side, {}).get("leaders", [])
+                    if not leaders:
+                        continue
+                    # B2B teams likely start their backup (leaders[1] if available)
+                    is_b2b = abbrev in b2b_teams
+                    g = leaders[1] if (is_b2b and len(leaders) > 1) else leaders[0]
+                    starter_note = " [B2B-BACKUP]" if is_b2b and len(leaders) > 1 else (" [B2B-no backup listed]" if is_b2b else "")
+                    fname = g.get("firstName", {})
+                    lname = g.get("lastName", {})
+                    if isinstance(fname, dict): fname = fname.get("default", "")
+                    if isinstance(lname, dict): lname = lname.get("default", "")
+                    name = f"{fname} {lname}".strip()
+                    record = g.get("record", "")
+                    gaa = g.get("gaa", "")
+                    sv = g.get("savePctg", "")
+                    detail = f"{name}{starter_note} ({record}, {gaa:.2f} GAA, .{int(float(sv)*1000):03d} SV%)" if name and gaa else f"{name}{starter_note}"
+                    goalie_map[abbrev] = detail
+            except Exception as e:
+                log(f"  ⚠️  Gamecenter fetch failed for game {game_id}: {e}")
+        if goalie_map:
+            log(f"  ✅ Goalies: {goalie_map}")
+        else:
+            log(f"  ⚠️  No goalies found in gamecenter landing")
     except Exception as e:
         log(f"  ⚠️  Goalie fetch failed: {e}")
+    # ESPN uses different slugs than NHL abbreviations
+    ESPN_SLUG = {
+        "ANA": "anaheim-ducks",     "ARI": "arizona-coyotes",   "BOS": "boston-bruins",
+        "BUF": "buffalo-sabres",    "CGY": "calgary-flames",    "CAR": "carolina-hurricanes",
+        "CHI": "chicago-blackhawks","COL": "colorado-avalanche", "CBJ": "columbus-blue-jackets",
+        "DAL": "dallas-stars",      "DET": "detroit-red-wings", "EDM": "edmonton-oilers",
+        "FLA": "florida-panthers",  "LAK": "los-angeles-kings", "MIN": "minnesota-wild",
+        "MTL": "montreal-canadiens","NSH": "nashville-predators","NJD": "new-jersey-devils",
+        "NYI": "new-york-islanders","NYR": "new-york-rangers",  "OTT": "ottawa-senators",
+        "PHI": "philadelphia-flyers","PIT": "pittsburgh-penguins","SJS": "san-jose-sharks",
+        "SEA": "seattle-kraken",    "STL": "st-louis-blues",    "TBL": "tampa-bay-lightning",
+        "TOR": "toronto-maple-leafs","UTA": "utah-hockey-club", "VAN": "vancouver-canucks",
+        "VGK": "vegas-golden-knights","WSH": "washington-capitals","WPG": "winnipeg-jets",
+        "PHX": "arizona-coyotes",
+    }
 
-    # Step 1b: Injuries from ESPN for top-3 game teams only
     injury_map: Dict[str, str] = {}
     top_teams = list({t for pair in research_pairs for t in pair})
     for team_abbrev in top_teams:
         try:
-            url = f"https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{team_abbrev}/injuries"
+            slug = ESPN_SLUG.get(team_abbrev, team_abbrev.lower())
+            url = f"https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/{slug}/injuries"
             data = fetch_json(url, timeout=10, tries=2)
             injuries = []
+            # ESPN injury response: data.injuries[] each has athlete + type + status + details
             for entry in data.get("injuries", []):
-                name = entry.get("athlete", {}).get("displayName", "")
+                athlete = entry.get("athlete", {})
+                name = athlete.get("displayName", "")
                 status = entry.get("status", "")
-                desc = entry.get("description", "")
-                if name and status and status.lower() not in ("active",):
+                # Try both 'description' and 'details' fields
+                desc = entry.get("details", {}).get("type", "") or entry.get("description", "")
+                if name and status and status.lower() not in ("active", "day-to-day"):
                     injuries.append(f"{name} ({status}{': ' + desc if desc else ''})")
-            injury_map[team_abbrev] = ", ".join(injuries[:4]) if injuries else "None reported"
-            log(f"  ✅ {team_abbrev} injuries: {injury_map[team_abbrev][:60]}")
+                elif name and status and status.lower() == "day-to-day":
+                    injuries.append(f"{name} (day-to-day{': ' + desc if desc else ''})")
+            injury_map[team_abbrev] = ", ".join(injuries[:5]) if injuries else "None reported"
+            log(f"  ✅ {team_abbrev} injuries: {injury_map[team_abbrev][:80]}")
         except Exception as e:
             injury_map[team_abbrev] = "Unavailable"
             log(f"  ⚠️  Injury fetch failed for {team_abbrev}: {e}")
