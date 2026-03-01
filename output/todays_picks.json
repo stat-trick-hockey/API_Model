@@ -1,6 +1,6 @@
 {
   "as_of": "2026-02-28",
-  "potd": "PIT - surging form, Shesterkin can't save everyone",
+  "potd": "PIT - surging form, NYR historically bad",
   "picks": [
     {
       "team": "COL",
@@ -43,14 +43,14 @@
       "prob": "58.3%"
     },
     {
+      "team": "NYI",
+      "ml": "-128",
+      "prob": "56.2%"
+    },
+    {
       "team": "NJD",
       "ml": "-126",
       "prob": "55.7%"
-    },
-    {
-      "team": "NYI",
-      "ml": "-124",
-      "prob": "55.3%"
     },
     {
       "team": "PIT",
