@@ -1,71 +1,36 @@
 {
-  "as_of": "2026-02-28",
-  "potd": "COL - dominant metrics, CHI backup likely",
+  "as_of": "2026-03-01",
+  "potd": "MIN - elite goalie, STL historic collapse",
   "picks": [
     {
-      "team": "COL",
-      "ml": "-572",
-      "prob": "85.1%"
+      "team": "MIN",
+      "ml": "-403",
+      "prob": "80.1%"
     },
     {
-      "team": "DAL",
-      "ml": "-244",
-      "prob": "70.9%"
+      "team": "UTA",
+      "ml": "-193",
+      "prob": "65.9%"
     },
     {
-      "team": "TBL",
-      "ml": "-236",
-      "prob": "70.3%"
-    },
-    {
-      "team": "SEA",
-      "ml": "-196",
-      "prob": "66.2%"
-    },
-    {
-      "team": "MTL",
-      "ml": "-166",
-      "prob": "62.4%"
-    },
-    {
-      "team": "LAK",
-      "ml": "-158",
-      "prob": "61.3%"
-    },
-    {
-      "team": "TOR",
-      "ml": "-156",
-      "prob": "60.9%"
-    },
-    {
-      "team": "CAR",
-      "ml": "-140",
-      "prob": "58.3%"
+      "team": "ANA",
+      "ml": "-177",
+      "prob": "63.8%"
     },
     {
       "team": "NYI",
-      "ml": "-128",
-      "prob": "56.2%"
+      "ml": "-129",
+      "prob": "56.4%"
     },
     {
-      "team": "NJD",
-      "ml": "-126",
-      "prob": "55.7%"
+      "team": "VGK",
+      "ml": "-116",
+      "prob": "53.8%"
     },
     {
-      "team": "PIT",
-      "ml": "-117",
-      "prob": "53.9%"
-    },
-    {
-      "team": "PHI",
-      "ml": "-106",
-      "prob": "51.4%"
-    },
-    {
-      "team": "SJS",
-      "ml": "-101",
-      "prob": "50.2%"
+      "team": "WPG",
+      "ml": "-104",
+      "prob": "50.9%"
     }
   ]
 }
